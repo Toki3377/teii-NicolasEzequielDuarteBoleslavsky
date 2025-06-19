@@ -1,0 +1,9 @@
+{
+    "Meta Data": {
+        "1. Information": "Weekly Adjusted Prices and Volumes",
+        "2. Symbol": "NODATA",
+        "3. Last Refreshed": "2023-10-27",
+        "4. Time Zone": "US/Eastern"
+    }
+    // NOTA: Intencionadamente no hay "Weekly Adjusted Time Series" aquí
+}
