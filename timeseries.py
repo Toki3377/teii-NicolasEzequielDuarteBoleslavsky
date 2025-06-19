@@ -106,10 +106,8 @@ class TimeSeriesFinanceClient(FinanceClient):
 
         series = self._data_frame['aclose']
 
-        # TODO
-        #   Comprueba que from_date <= to_date y genera excepción
-        #   'FinanceClientParamError' en caso de error
         if from_date is not None and to_date is not None:
+            # Comprobación de que from_date no sea mayor que to_date
             if from_date > to_date:
                 raise FinanceClientParamError("'from_date' cannot be greater than 'to_date'")
             series = series.loc[from_date:to_date]   # type: ignore
