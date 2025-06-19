@@ -177,3 +177,51 @@ class TimeSeriesFinanceClient(FinanceClient):
         yearly_total_dividends.index.name = 'year'
 
         return yearly_total_dividends
+        
+       def highest_weekly_variation(self,
+                                 from_date: Optional[dt.date] = None,
+                                 to_date: Optional[dt.date] = None) -> Tuple[dt.date, float, float, float]:
+        """
+        Calculates the date with the highest weekly price variation (high - low).
+
+        Parameters:
+            from_date (Optional[dt.date]): The starting date for filtering.
+            to_date (Optional[dt.date]): The ending date for filtering.
+
+        Returns:
+            Tuple[dt.date, float, float, float]: A tuple containing the date,
+                                                  high price, low price, and the high-low variation.
+
+        Raises:
+            FinanceClientParamError: If from_date is greater than to_date.
+            FinanceClientInvalidData: If no data is available for the specified range.
+        """
+        assert self._data_frame is not None, "DataFrame has not been built."
+
+        df_variation = self._data_frame[['high', 'low']].copy()
+        
+        if from_date is not None and to_date is not None:
+            if from_date > to_date:
+                raise FinanceClientParamError("'from_date' cannot be greater than 'to_date'")
+            df_variation = df_variation.loc[from_date:to_date]
+        elif from_date is not None:
+            df_variation = df_variation.loc[from_date:]
+        elif to_date is not None:
+            df_variation = df_variation.loc[:to_date]
+
+        if df_variation.empty:
+            raise FinanceClientInvalidData("No data available for the specified date range.")
+
+        df_variation['variation'] = df_variation['high'] - df_variation['low']
+
+        max_variation_date = df_variation['variation'].idxmax()
+        max_variation_row = df_variation.loc[max_variation_date]
+
+        high_val = max_variation_row['high']
+        low_val = max_variation_row['low']
+        variation_val = max_variation_row['variation']
+
+        # Ensure the date is a datetime.date object
+        date_obj = max_variation_date.to_pydatetime().date() if isinstance(max_variation_date, pd.Timestamp) else max_variation_date.date()
+
+        return (date_obj, high_val, low_val, variation_val)
