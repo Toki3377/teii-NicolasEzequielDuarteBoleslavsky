@@ -132,3 +132,48 @@ class TimeSeriesFinanceClient(FinanceClient):
             series = series.loc[from_date:to_date]   # type: ignore
 
         return series
+        
+   def yearly_dividends(self,
+                         from_year: Optional[int] = None,
+                         to_year: Optional[int] = None) -> pd.Series:
+        """
+        Calculate total annual dividends from 'from_year' to 'to_year'.
+
+        Parameters:
+            from_year (Optional[int]): The starting year for filtering dividends.
+            to_year (Optional[int]): The ending year for filtering dividends.
+
+        Returns:
+            pd.Series: A Series with years as index and total annual dividends as values.
+
+        Raises:
+            FinanceClientParamError: If from_year is greater than to_year.
+        """
+        assert self._data_frame is not None, "DataFrame has not been built."
+
+        dividends_series = self._data_frame['dividend']
+
+        # Filter out zero dividends to avoid unnecessary processing
+        dividends_series = dividends_series[dividends_series > 0]
+
+        if from_year is not None and to_year is not None:
+            if from_year > to_year:
+                raise FinanceClientParamError("'from_year' cannot be greater than 'to_year'")
+
+            # Filter by year range
+            dividends_series = dividends_series[
+                (dividends_series.index.year >= from_year) &
+                (dividends_series.index.year <= to_year)
+            ]
+        elif from_year is not None:
+            dividends_series = dividends_series[dividends_series.index.year >= from_year]
+        elif to_year is not None:
+            dividends_series = dividends_series[dividends_series.index.year <= to_year]
+
+        # Group by year and sum dividends
+        yearly_total_dividends = dividends_series.groupby(dividends_series.index.year).sum()
+
+        # Rename index to 'year' for clarity if needed, or leave as int for Series
+        yearly_total_dividends.index.name = 'year'
+
+        return yearly_total_dividends
