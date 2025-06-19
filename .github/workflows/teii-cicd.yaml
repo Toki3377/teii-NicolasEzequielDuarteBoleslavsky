@@ -1,0 +1,62 @@
+name: TEII CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - 'feature/**' # Soporte para ramas de características
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10"] # py38, py39, py310
+        os: [ubuntu-20.04, ubuntu-22.04] # ubuntu-20.04, ubuntu-22.04
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Set up Python ${{ matrix.python-version }} on ${{ matrix.os }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install tox tox-gh-actions
+    - name: Run tox tests
+      run: tox -e py
+      env:
+        TEII_FINANCE_API_KEY: ${{ secrets.TEII_FINANCE_API_KEY }} # Asegúrate de que esta variable de entorno esté configurada en tus secretos de GitHub
+
+  # publish-to-testpypi:
+  #   name: Publish Python distribution to TestPyPI
+  #   if: startsWith(github.ref, 'refs/tags')
+  #   needs: [build-and-test]
+  #   runs-on: ubuntu-latest
+  #   environment:
+  #     name: testpypi
+  #     url: https://pypi.org/project/teii-finance-client/
+  #   permissions:
+  #     id-token: write # This is required for requesting the JWT
+  #   steps:
+  #   - uses: actions/checkout@v4
+  #   - name: Set up Python
+  #     uses: actions/setup-python@v5
+  #     with:
+  #       python-version: "3.x"
+  #   - name: Install dependencies
+  #     run: |
+  #       python -m pip install --upgrade pip
+  #       pip install build twine
+  #   - name: Build distribution
+  #     run: python -m build
+  #   - name: Publish distribution to TestPyPI
+  #     uses: pypa/gh-action-pypi-publish@release/v1
+  #     with:
+  #       repository-url: https://test.pypi.org/legacy/
+  #       username: __token__
+  #       password: ${{ secrets.TEST_PYPI_API_TOKEN }}
